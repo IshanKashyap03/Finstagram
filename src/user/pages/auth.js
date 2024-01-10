@@ -5,6 +5,9 @@ import { VALIDATOR_REQUIRE,VALIDATOR_EMAIL, VALIDATOR_MINLENGTH } from '../../sh
 import Button from '../../shared/components/FormElements/Button';
 import Card from '../../shared/components/UIElements/Card';
 import { AuthContext } from '../../shared/context/auth-context';
+import ErrorModal from '../../places/components/ErrorModal';
+import LoadingSpinner from '../../places/components/LoadingSpinner';
+import { useHttpClient } from '../../shared/hooks/http-hook';
 import './auth.css'
 
 const Auth = () => {
@@ -12,7 +15,8 @@ const Auth = () => {
     const auth = useContext(AuthContext);
     
     const [isLoginMode, setIsLoginMode] = useState(true);
-    const [ formState, inputHandler, setFormData] = useForm({
+    const {isloading, error, sendRequest, errorHandler} = useHttpClient();
+    const [formState, inputHandler, setFormData] = useForm({
         email: {
             value: '',
             isValid: false
@@ -41,13 +45,50 @@ const Auth = () => {
         setIsLoginMode(prevMode => !prevMode);
     };
 
-    const authSubmitHandler = event => {
+    const authSubmitHandler = async event => {
         event.preventDefault();
-        console.log(formState.inputs);
-        auth.login();
-    }
+        
+        if(isLoginMode){
+            try{
+                const responseData = await sendRequest('http://localhost:5001/api/users/login',
+                'POST',
+                JSON.stringify({
+                    email: formState.inputs.email.value,
+                    password: formState.inputs.password.value
+                }),
+                {
+                    'Content-type': 'application/json' 
+                },
+            );
+            auth.login(responseData.user.id);
+            }catch(err){
+                
+            }
+        }else{
+            try{
+                //we have the user id in responseData from the backend.
+                const responseData = await sendRequest('http://localhost:5001/api/users/signup',
+                'POST',
+                JSON.stringify({
+                    name: formState.inputs.name.value,
+                    email: formState.inputs.email.value,
+                    password: formState.inputs.password.value
+                }),
+                {
+                    'Content-type': 'application/json' 
+                },
+            );
+                //passes the user id
+                auth.login(responseData.user.id);
+            }catch(err){
+            }
+        }
+    };
 
-    return <Card className="authentication">
+    return <React.Fragment>
+    <ErrorModal error={error} onClear={errorHandler}/>
+    <Card className="authentication">
+        {isloading && <LoadingSpinner asOverlay/>}
         <h2>Login Required</h2>
         <form className='place-form' onSubmit={authSubmitHandler}>
             {!isLoginMode && 
@@ -75,8 +116,8 @@ const Auth = () => {
             id="password"
             element="input"
             label="Password"
-            validators={[VALIDATOR_MINLENGTH(5)]}
-            errorText = "Please enter a valid password, at least 5 characters."
+            validators={[VALIDATOR_MINLENGTH(6)]}
+            errorText = "Please enter a valid password, at least 6 characters."
             onInput = {inputHandler}
             />
 
@@ -85,6 +126,7 @@ const Auth = () => {
 
         <Button inverse onClick={switchModeHandler}>SWITCH TO {isLoginMode? 'SIGNUP' : 'LOGIN'}</Button>
     </Card>
+    </React.Fragment>
 };
 
 export default Auth;

@@ -12,13 +12,17 @@ import { useCallback, useState } from 'react';
 function App() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState(false);
 
-  const login = useCallback(() => {
+  //uid is passed when the login function is called in auth.js
+  const login = useCallback((uid) => {
     setIsLoggedIn(true);
+    setUserId(uid);
   }, []);
 
   const logout = useCallback(() => {
     setIsLoggedIn(false);
+    setUserId(null);
   }, []);
 
   let routes;
@@ -58,7 +62,8 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{isLoggedIn: isLoggedIn, login: login, logout: logout}}>
+    //we pass all these parameters globally so that any file can use it. Used in auth.js mainly.
+    <AuthContext.Provider value={{isLoggedIn: isLoggedIn, userId: userId,login: login, logout: logout}}>
       <Router>
       <MainNavigation/>
       {
