@@ -7,27 +7,13 @@ import UserPlaces from './places/pages/UserPlaces';
 import UpdatePlace from './places/pages/UpdatePlace';
 import Auth from './user/pages/auth';
 import { AuthContext } from './shared/context/auth-context';
-import { useCallback, useState } from 'react';
+import { useAuth } from './shared/hooks/auth-hook';
 
 function App() {
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState(false);
-
-  //uid is passed when the login function is called in auth.js
-  const login = useCallback((uid) => {
-    setIsLoggedIn(true);
-    setUserId(uid);
-  }, []);
-
-  const logout = useCallback(() => {
-    setIsLoggedIn(false);
-    setUserId(null);
-  }, []);
-
+  const {token, login, logout, userId} = useAuth();
   let routes;
-  if(isLoggedIn){
-    routes = (
+  if(token){
+    routes = ( 
       <Switch>
       <Route path="/" exact>
             <Users/>
@@ -63,7 +49,7 @@ function App() {
 
   return (
     //we pass all these parameters globally so that any file can use it. Used in auth.js mainly.
-    <AuthContext.Provider value={{isLoggedIn: isLoggedIn, userId: userId,login: login, logout: logout}}>
+    <AuthContext.Provider value={{isLoggedIn: !!token, token: token, userId: userId, login: login, logout: logout}}>
       <Router>
       <MainNavigation/>
       {

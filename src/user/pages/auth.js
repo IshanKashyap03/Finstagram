@@ -8,6 +8,7 @@ import { AuthContext } from '../../shared/context/auth-context';
 import ErrorModal from '../../places/components/ErrorModal';
 import LoadingSpinner from '../../places/components/LoadingSpinner';
 import { useHttpClient } from '../../shared/hooks/http-hook';
+import ImageUpload from '../../shared/components/FormElements/ImageUpload';
 import './auth.css'
 
 const Auth = () => {
@@ -31,13 +32,18 @@ const Auth = () => {
         if(!isLoginMode){
             setFormData({
                 ...formState.inputs,
-                name: undefined
+                name: undefined,
+                image: undefined,
             }, formState.inputs.email.isValid && formState.inputs.password.isValid);
         }else{
             setFormData({
                 ...formState.inputs,
                 name: {
                     value: '',
+                    isValid: false
+                },
+                image: {
+                    value: null,
                     isValid: false
                 }
             }, false);
@@ -60,26 +66,24 @@ const Auth = () => {
                     'Content-type': 'application/json' 
                 },
             );
-            auth.login(responseData.user.id);
+            auth.login(responseData.userId, responseData.token);
             }catch(err){
                 
             }
         }else{
             try{
+                const formData = new FormData();
+                formData.append('email', formState.inputs.email.value);
+                formData.append('name', formState.inputs.name.value);
+                formData.append('password', formState.inputs.password.value);
+                formData.append('image', formState.inputs.image.value);
                 //we have the user id in responseData from the backend.
                 const responseData = await sendRequest('http://localhost:5001/api/users/signup',
                 'POST',
-                JSON.stringify({
-                    name: formState.inputs.name.value,
-                    email: formState.inputs.email.value,
-                    password: formState.inputs.password.value
-                }),
-                {
-                    'Content-type': 'application/json' 
-                },
+                formData
             );
                 //passes the user id
-                auth.login(responseData.user.id);
+                auth.login(responseData.userId, responseData.token);
             }catch(err){
             }
         }
@@ -102,6 +106,9 @@ const Auth = () => {
             onInput = {inputHandler}
             />
             }
+
+            {!isLoginMode && <ImageUpload center id="image" onInput={inputHandler}/>}
+
             <Input 
             id="email"
             element="input"
